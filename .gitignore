@@ -1,0 +1,5 @@
+# Derleme çıktıları (Releases sayfasında yayınlanır)
+cikti/
+# İmza anahtarı gizli kalmalı
+*.keystore
+*.jks
