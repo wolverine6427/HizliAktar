@@ -5,23 +5,32 @@ $out  = Join-Path $root 'cikti'
 New-Item -ItemType Directory -Force $out | Out-Null
 
 # ---- PC ----
+# csc ve aapt2 bosluklu/Turkce karakterli yollarda sorun cikardigi icin ASCII gecici klasorde derle
+$b = Join-Path $env:TEMP 'hizliaktar_build'
+if (Test-Path $b) { Remove-Item -Recurse -Force $b }
+New-Item -ItemType Directory -Force "$b\classes", "$b\dex" | Out-Null
+Copy-Item -Recurse "$root\pc" "$b\pc"
 $csc = "$env:WINDIR\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-& $csc /nologo /codepage:65001 /optimize+ /target:winexe /out:"$out\HizliAktar.exe" `
-    /r:System.Windows.Forms.dll /r:System.Drawing.dll "$root\pc\Proto.cs" "$root\pc\MainForm.cs"
-if ($LASTEXITCODE) { throw "PC derlemesi basarisiz" }
+Push-Location "$b\pc"
+& $csc /nologo /codepage:65001 /optimize+ /target:winexe /out:HizliAktar.exe /win32icon:app.ico `
+    /resource:logo_bg.png,logo_bg.png /resource:logo_small.png,logo_small.png /resource:qr_apk.png,qr_apk.png `
+    /r:System.Windows.Forms.dll /r:System.Drawing.dll Proto.cs MainForm.cs
+$rc = $LASTEXITCODE
+Pop-Location
+if ($rc) { throw "PC derlemesi basarisiz" }
+Copy-Item "$b\pc\HizliAktar.exe" "$out\HizliAktar.exe" -Force
 
 # ---- Android ----
 $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { "$env:LOCALAPPDATA\Android\Sdk" }
 $bt  = "$sdk\build-tools\35.0.0"
 $jar = "$sdk\platforms\android-35\android.jar"
-# aapt2/d8 Turkce karakterli yollarda sorun cikarabildigi icin ASCII gecici klasorde derle
-$b = Join-Path $env:TEMP 'hizliaktar_build'
-if (Test-Path $b) { Remove-Item -Recurse -Force $b }
-New-Item -ItemType Directory -Force "$b\classes", "$b\dex" | Out-Null
 Copy-Item "$root\android\AndroidManifest.xml" $b
 Copy-Item -Recurse "$root\android\src" "$b\src"
+Copy-Item -Recurse "$root\android\res" "$b\res"
 
-& "$bt\aapt2.exe" link -o "$b\base.apk" -I $jar --manifest "$b\AndroidManifest.xml"
+& "$bt\aapt2.exe" compile --dir "$b\res" -o "$b\res.zip"
+if ($LASTEXITCODE) { throw "aapt2 compile basarisiz" }
+& "$bt\aapt2.exe" link -o "$b\base.apk" -I $jar --manifest "$b\AndroidManifest.xml" "$b\res.zip"
 if ($LASTEXITCODE) { throw "aapt2 basarisiz" }
 $srcs = Get-ChildItem -Recurse "$b\src" -Filter *.java | ForEach-Object FullName
 & javac -nowarn -encoding UTF-8 -source 8 -target 8 -bootclasspath $jar -classpath "$bt\core-lambda-stubs.jar" -d "$b\classes" @srcs

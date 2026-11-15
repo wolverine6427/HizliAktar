@@ -3,3 +3,4 @@ cikti/
 # İmza anahtarı gizli kalmalı
 *.keystore
 *.jks
+*.stackdump

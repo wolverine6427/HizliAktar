@@ -42,6 +42,8 @@ public class ReceiverService extends Service {
     private final ExecutorService pool = Executors.newCachedThreadPool();
     private WifiManager.WifiLock wifiLock;
     private PowerManager.WakeLock wakeLock;
+    private WifiManager.MulticastLock multicastLock;
+    private DatagramSocket udpListen;
 
     static synchronized void log(String s) {
         LOG.addFirst(new SimpleDateFormat("HH:mm:ss", Locale.US).format(new Date()) + "  " + s);
@@ -68,8 +70,13 @@ public class ReceiverService extends Service {
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "HizliAktar:cpu");
         wakeLock.acquire();
+        // Bazı cihazlar yayın paketlerini ancak bu kilit varken uygulamaya iletir.
+        multicastLock = wm.createMulticastLock("HizliAktar:discovery");
+        multicastLock.setReferenceCounted(false);
+        multicastLock.acquire();
         pool.execute(this::serve);
         pool.execute(this::announce);
+        pool.execute(this::listen);
         return START_STICKY;
     }
 
@@ -80,6 +87,8 @@ public class ReceiverService extends Service {
         pool.shutdownNow();
         if (wifiLock != null && wifiLock.isHeld()) wifiLock.release();
         if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+        if (multicastLock != null && multicastLock.isHeld()) multicastLock.release();
+        if (udpListen != null) udpListen.close();
         status = "Durduruldu";
         super.onDestroy();
     }
@@ -96,7 +105,7 @@ public class ReceiverService extends Service {
         PendingIntent pi = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_IMMUTABLE);
         return b.setSmallIcon(android.R.drawable.stat_sys_download_done)
                 .setContentTitle("Hızlı Aktar hazır")
-                .setContentText("PC'den dosya bekleniyor")
+                .setContentText("Dosya alıp göndermeye hazır")
                 .setContentIntent(pi)
                 .setOngoing(true)
                 .build();
@@ -133,7 +142,7 @@ public class ReceiverService extends Service {
         try (DatagramSocket u = new DatagramSocket()) {
             u.setBroadcast(true);
             while (running) {
-                byte[] m = ("HA1|" + Prefs.id(this) + "|" + TCP_PORT + "|" + Prefs.name(this)).getBytes(StandardCharsets.UTF_8);
+                byte[] m = ("HA2|" + Prefs.id(this) + "|" + TCP_PORT + "|mobil|" + Prefs.name(this)).getBytes(StandardCharsets.UTF_8);
                 for (InetAddress bc : broadcastAddresses()) {
                     try { u.send(new DatagramPacket(m, m.length, bc, UDP_PORT)); } catch (IOException ignored) { }
                 }
@@ -141,6 +150,28 @@ public class ReceiverService extends Service {
             }
         } catch (Exception e) {
             if (running) log("Yayın hatası: " + e);
+        }
+    }
+
+    /** Diğer cihazların (PC, tablet, telefon) yayınlarını dinler. */
+    private void listen() {
+        try {
+            udpListen = new DatagramSocket(null);
+            udpListen.setReuseAddress(true);
+            udpListen.bind(new InetSocketAddress(UDP_PORT));
+            byte[] buf = new byte[1024];
+            while (running) {
+                DatagramPacket pk = new DatagramPacket(buf, buf.length);
+                udpListen.receive(pk);
+                String[] p = new String(pk.getData(), 0, pk.getLength(), StandardCharsets.UTF_8).split("\\|", 5);
+                try {
+                    String ip = pk.getAddress().getHostAddress();
+                    if (p.length == 5 && p[0].equals("HA2")) Peers.seen(this, p[1], p[4], p[3], ip, Integer.parseInt(p[2]), false);
+                    else if (p.length >= 4 && p[0].equals("HA1")) Peers.seen(this, p[1], p[3], "mobil", ip, Integer.parseInt(p[2]), false);
+                } catch (NumberFormatException ignored) { }
+            }
+        } catch (IOException e) {
+            if (running) log("Keşif dinleme hatası: " + e.getMessage());
         }
     }
 
@@ -157,13 +188,13 @@ public class ReceiverService extends Service {
         return list;
     }
 
-    private static String readStr(DataInputStream in) throws IOException {
+    static String readStr(DataInputStream in) throws IOException {
         byte[] b = new byte[in.readUnsignedShort()];
         in.readFully(b);
         return new String(b, StandardCharsets.UTF_8);
     }
 
-    private static void writeStr(DataOutputStream out, String s) throws IOException {
+    static void writeStr(DataOutputStream out, String s) throws IOException {
         byte[] b = s.getBytes(StandardCharsets.UTF_8);
         out.writeShort(b.length);
         out.write(b);
@@ -191,23 +222,29 @@ public class ReceiverService extends Service {
             DataOutputStream out = new DataOutputStream(sock.getOutputStream());
             byte[] magic = new byte[3];
             in.readFully(magic);
-            if (!"HA1".equals(new String(magic, StandardCharsets.US_ASCII))) return;
+            String mg = new String(magic, StandardCharsets.US_ASCII);
+            if (!mg.equals("HA1") && !mg.equals("HA2")) return;
             int pin = in.readInt();
+            String sid = null, sname = null, stype = null;
+            if (mg.equals("HA2")) { sid = readStr(in); sname = readStr(in); stype = readStr(in); }
             path = readStr(in);
             long size = in.readLong();
             boolean ok = pin == Prefs.pin(this);
+            // Doğru kodla bağlanan cihaz bu tarafta da hatırlanır.
+            if (ok && sid != null) Peers.seen(this, sid, sname, stype, sock.getInetAddress().getHostAddress(), TCP_PORT, true);
 
             if (size < 0) { // ping / eşleştirme kontrolü
                 out.write(ok ? 'K' : 'P');
                 writeStr(out, Prefs.id(this));
                 writeStr(out, Prefs.name(this));
+                writeStr(out, "mobil");
                 out.flush();
                 return;
             }
             if (!ok) {
                 out.write('P');
                 out.flush();
-                log("Yanlış PIN ile gönderim reddedildi: " + sock.getInetAddress().getHostAddress());
+                log("Yanlış kodla gönderim reddedildi: " + sock.getInetAddress().getHostAddress());
                 return;
             }
             List<String> parts = safeParts(path);
@@ -262,7 +299,7 @@ public class ReceiverService extends Service {
                 legacyFile = null;
                 out.write('D');
                 out.flush();
-                log("Alındı: " + path + String.format(Locale.US, "  (%.1f MB)", size / 1048576.0));
+                log("Alındı ← " + (sname != null ? sname : sock.getInetAddress().getHostAddress()) + ": " + path + String.format(Locale.US, "  (%.1f MB)", size / 1048576.0));
             } finally {
                 active.decrementAndGet();
             }
