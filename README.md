@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <b>Bilgisayar ⇄ tablet / telefon arasında, aynı Wi-Fi üzerinden, kablosuz, ücretsiz, sınırsız dosya aktarımı.</b><br>
+  <b>Bilgisayar, tablet ve telefon arasında her yönde kablosuz, ücretsiz, sınırsız dosya aktarımı. Aynı Wi-Fi üzerinden ya da modemsiz doğrudan bağlantıyla.</b><br>
   Sürükle-bırak ile gönder, telefondan "Paylaş" ile geri gönder. İnternet, hesap, bulut ve kablo gerekmez.
 </p>
 
@@ -50,6 +50,7 @@ Tüm sürümler: [Releases sayfası](../../releases)
 ## ✨ Neler yapabilir?
 
 - **Çift yönlü:** Bilgisayardan tablete de, tabletten bilgisayara da gönderebilirsiniz. Tabletten tablete veya telefona da çalışır.
+- **⚡ Doğrudan bağlantı:** Modem gerekmeden cihazdan cihaza Wi-Fi Direct (Huawei Share / Quick Share yöntemi). Aynı modemden geçmeye göre yaklaşık 2 kat hızlı.
 - **Sürükle-bırak:** Dosya ve klasörleri bilgisayardaki pencereye bırakın, hemen gönderilir. Klasör yapısı korunur.
 - **Paylaş menüsü:** Tablette Galeri, Dosyalar, WhatsApp gibi herhangi bir uygulamada **Paylaş → Hızlı Aktar**'ı seçin, dosya bilgisayara gitsin.
 - **Kendiliğinden bulur:** Aynı Wi-Fi'deki cihazlar, adlarıyla birlikte listede kendiliğinden görünür.
@@ -103,6 +104,36 @@ Bilgisayarda dosyalar **İndirilenler\HizliAktar** klasörüne kaydedilir. Pence
 
 ---
 
+## ⚡ En hızlı yol: Doğrudan bağlantı (modemsiz)
+
+Aynı Wi-Fi'de her paket önce modeme, sonra modemden karşı cihaza gider; yani havadan **iki kez** geçer. **Doğrudan bağlantıda** (Wi-Fi Direct) cihazlar birbirine tek adımda bağlanır, mümkünse 5 GHz bandında. Bu, Huawei Share ve Google Quick Share'in kullandığı yöntemin kendisidir. Aynı modemden geçmeye göre yaklaşık **2 kat** hızlıdır, Wi-Fi'nin hiç olmadığı yerde de çalışır ve bağlantı WPA2 ile şifrelidir.
+
+**Android ⇄ Android (tablet, telefon; Android 10+):**
+1. İki cihazın **eşleşme kodu aynı** olsun.
+2. Birinci cihaz: **⚡ Doğrudan bağlantı → Bağlantıyı aç**.
+3. İkinci cihaz: **⚡ Doğrudan bağlantı → Bağlantıya katıl**. Onay gerekmez; cihazlar birkaç saniyede listede görünür.
+4. Bittiğinde **Bağlantıyı kapat**.
+
+**Bilgisayar ⇄ Android:**
+1. Tablette **⚡ Doğrudan bağlantı → Bağlantıyı aç**. Ekranda bir **ağ adı** (`DIRECT-HA-HizliAktar-…`) ve **şifre** görünür.
+2. Bilgisayarda Wi-Fi listesinden bu ağa bağlanın ve şifreyi girin. Windows sorarsa ağın **bulunabilir (Özel)** olmasına izin verin.
+3. Cihazlar listede görünür. Görünmezse bilgisayarda **IP ile ekle → 192.168.49.1**.
+
+> Bilgisayar bu ağa bağlıyken internete çıkamaz; aktarım bitince eski Wi-Fi'nize geri dönün.
+
+### Hangi durumda hangi yol en hızlı?
+
+| Cihazlar | En hızlı yol |
+|---|---|
+| Telefon / tablet ⇄ telefon / tablet | **⚡ Doğrudan bağlantı** |
+| Bilgisayar ⇄ telefon / tablet | **⚡ Doğrudan bağlantı** (PC ağa katılır). Bilgisayar modeme **kabloyla** bağlı ve modem 5 GHz/Wi-Fi 6 ise aynı Wi-Fi de neredeyse aynı hızdadır. |
+| Bilgisayar ⇄ bilgisayar | İkisi de modeme **kabloyla** bağlıyken (100–1000 Mbit kabloyla 11–110 MB/sn). Kablo yoksa aynı Wi-Fi. |
+| Wi-Fi olmayan yer | **⚡ Doğrudan bağlantı** |
+
+Hangi yolu seçerseniz seçin protokol aynıdır: 4 paralel TCP bağlantısı, 1 MB tamponlar ve hız sınırı yok. Hızı belirleyen tek şey, cihazlar arasındaki bağlantının kendisidir.
+
+---
+
 ## 🛠️ Sorun giderme
 
 | Sorun | Çözüm |
@@ -114,7 +145,9 @@ Bilgisayarda dosyalar **İndirilenler\HizliAktar** klasörüne kaydedilir. Pence
 | "Bu adreste bulunamadı" | Cihazın IP adresi değişmiş olabilir. Cihazda Hızlı Aktar'ı açın; birkaç saniye içinde yeni adres kendiliğinden öğrenilir. |
 | Huawei / Honor arka planda kapatıyor | *Ayarlar → Pil → Uygulama başlatma → Hızlı Aktar → Manuel yönet* yolunu izleyin ve üç seçeneği de açın. |
 | APK kurulmuyor | **HarmonyOS NEXT / 5.x** Android uygulamalarını (APK) çalıştırmaz. Diğer cihazlarda bilinmeyen kaynaklara izin verildiğinden emin olun. |
-| Yavaş | Mümkünse 5 GHz Wi-Fi kullanın ve router'a yakın durun. Uygulama hızı kısmaz. |
+| Yavaş | **⚡ Doğrudan bağlantı** kullanın. Aynı Wi-Fi'de kalacaksanız 5 GHz kullanın ve modeme yakın durun. Uygulama hızı kısmaz. |
+| Doğrudan bağlantı açılmıyor | Wi-Fi açık mı? Android 12 ve altında **Konum** da açık olmalı. Uygulamanın **Yakındaki cihazlar** / **Konum** izni var mı? Android 9 ve altı desteklenmez. |
+| "Bağlantıyı açan cihaz bulunamadı" | İki cihazın eşleşme kodu aynı mı? Kod farklıysa ağ adı da farklı olur. |
 
 ---
 
@@ -205,7 +238,7 @@ HizliAktar/
 
 ## 📜 Sürüm geçmişi
 
-Son sürüm: **1.2.0**. Tüm değişiklikler için [CHANGELOG.md](CHANGELOG.md) dosyasına bakın.
+Son sürüm: **1.3.0**. Tüm değişiklikler için [CHANGELOG.md](CHANGELOG.md) dosyasına bakın.
 
 ## ⚖️ Lisans
 

@@ -13,14 +13,14 @@ using System.Windows.Forms;
 [assembly: AssemblyDescription("Aynı Wi-Fi ağında PC ile tablet/telefon arasında çift yönlü hızlı dosya aktarımı")]
 [assembly: AssemblyCompany("Muhammed Hüseyin KILIÇ")]
 [assembly: AssemblyCopyright("© 2026 Muhammed Hüseyin KILIÇ - MIT Lisansı")]
-[assembly: AssemblyVersion("1.2.0.0")]
-[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyVersion("1.3.0.0")]
+[assembly: AssemblyFileVersion("1.3.0.0")]
 
 namespace HizliAktar
 {
     public class MainForm : Form
     {
-        public const string Version = "1.2.0";
+        public const string Version = "1.3.0";
         public const string Author = "Muhammed Hüseyin KILIÇ";
         public const string RepoUrl = "https://github.com/wolverine6427/HizliAktar";
         public const string ApkUrl = RepoUrl + "/releases/latest/download/HizliAktar.apk";
@@ -358,7 +358,7 @@ namespace HizliAktar
                 var lblQr = new Label { Text = "Tabletin/telefonun kamerasıyla okutun:\nAPK doğrudan iner.", Left = 16, Top = 240, Width = 220, Height = 48, TextAlign = ContentAlignment.TopCenter };
                 var txt = new Label
                 {
-                    Left = 250, Top = 16, Width = 374, Height = 380,
+                    Left = 250, Top = 16, Width = 374, Height = 450,
                     Text =
                         "Tablet / telefon uygulaması (HizliAktar.apk)\n\n" +
                         "1) Tablette kamerayla soldaki QR kodu okutun\n" +
@@ -371,7 +371,8 @@ namespace HizliAktar
                         "    kendiliğinden görünür.\n\n" +
                         "4) İki tarafa da aynı eşleşme kodunu yazarsanız\n" +
                         "    kod hiç sorulmaz. Bu PC'nin kodu: " + Me.Pin + "\n\n" +
-                        "Huawei: Ayarlar → Pil → Uygulama başlatma →\nHızlı Aktar → Manuel yönet (hepsini açın)."
+                        "Huawei: Ayarlar → Pil → Uygulama başlatma →\nHızlı Aktar → Manuel yönet (hepsini açın).\n\n" +
+                        "Modemsiz, en hızlı yol: Tablette ⚡ Doğrudan bağlantı\n→ Bağlantıyı aç. Bu PC'yi Wi-Fi listesinde görünen\nağa bağlayın; Windows sorarsa ağı \"Özel\" yapın."
                 };
                 var link = new LinkLabel { Text = "GitHub sayfasını aç", Left = 16, Top = 300, Width = 220, TextAlign = ContentAlignment.TopCenter };
                 link.LinkClicked += (s, e) => Process.Start(RepoUrl + "/releases/latest");

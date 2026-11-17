@@ -2,6 +2,13 @@
 
 Biçim: [Keep a Changelog](https://keepachangelog.com/tr-TR/1.1.0/) · Sürümleme: [SemVer](https://semver.org/lang/tr/)
 
+## [1.3.0] - 2026-11-18
+### Eklendi
+- **⚡ Doğrudan bağlantı (Wi-Fi Direct):** Modem gerekmeden cihazdan cihaza bağlantı. Huawei Share / Quick Share ile aynı yöntemdir. Mümkünse 5 GHz bandında açılır ve aynı modemden geçmeye göre yaklaşık 2 kat hızlıdır.
+  - Android ⇄ Android: Bir cihaz *Bağlantıyı aç*, diğeri *Bağlantıya katıl*. Ağ adı ve şifre eşleşme kodundan türetildiği için onay gerekmez.
+  - Bilgisayar ve diğer cihazlar ekranda gösterilen ağa normal Wi-Fi gibi bağlanır.
+- README'ye "Hangi durumda hangi yol en hızlı?" tablosu eklendi. Bilgisayar rehberine doğrudan bağlantı notu eklendi.
+
 ## [1.2.0] - 2026-11-15
 ### Eklendi
 - **Çift yönlü aktarım:** Tabletten/telefondan bilgisayara (ve cihazdan cihaza) gönderim. Bilgisayar artık alıcı olarak da çalışır ve gelen dosyaları `İndirilenler\HizliAktar` klasörüne kaydeder.

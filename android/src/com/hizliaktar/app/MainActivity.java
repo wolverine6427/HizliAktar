@@ -143,6 +143,10 @@ public class MainActivity extends Activity {
         ipBtn.setOnClickListener(v -> addByIp());
         btns.addView(ipBtn, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         l.addView(btns);
+        Button directBtn = new Button(this);
+        directBtn.setText("⚡  Doğrudan bağlantı (modemsiz, en hızlı)");
+        directBtn.setOnClickListener(v -> directMenu());
+        l.addView(directBtn);
         sendView = text("", 15);
         sendView.setTextColor(Color.rgb(230, 100, 20));
         l.addView(sendView);
@@ -407,6 +411,61 @@ public class MainActivity extends Activity {
                 })
                 .setNegativeButton("İptal", null)
                 .show();
+    }
+
+    /** Wi-Fi Direct: modem yerine iki cihaz arasında doğrudan, tek atlamalı bağlantı. */
+    private void directMenu() {
+        if (!Direct.supported()) { toast("Doğrudan bağlantı Android 10 ve üstünde çalışır. Aynı Wi-Fi'yi kullanın."); return; }
+        String perm = Build.VERSION.SDK_INT >= 33 ? "android.permission.NEARBY_WIFI_DEVICES" : Manifest.permission.ACCESS_FINE_LOCATION;
+        if (checkSelfPermission(perm) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{perm}, 3);
+            toast("İzin verip düğmeye tekrar dokunun");
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("⚡ Doğrudan bağlantı")
+                .setMessage("Cihazlar modeme gerek olmadan birbirine doğrudan bağlanır (Huawei Share gibi). "
+                        + "Aynı modemden geçen bağlantıya göre yaklaşık 2 kat hızlıdır ve Wi-Fi olmayan yerde de çalışır.\n\n"
+                        + "1) Bir cihazda \"Bağlantıyı aç\" seçin.\n"
+                        + "2) Diğer Android cihazda \"Bağlantıya katıl\" seçin. İki cihazın eşleşme kodu aynı olmalı.\n"
+                        + "3) Bilgisayar ise Wi-Fi listesinden açılan ağa bağlanır (ağ adı ve şifre bağlantıyı açan cihazda görünür).\n\n"
+                        + "Bu cihazın kodu: " + Prefs.pin(this))
+                .setPositiveButton("Bağlantıyı aç", (d, w) -> Direct.host(this, err -> runOnUiThread(() -> {
+                    if (err != null) { toast(err); return; }
+                    ReceiverService.log("Doğrudan bağlantı açıldı: " + Direct.ssid(this));
+                    new AlertDialog.Builder(this)
+                            .setTitle("Doğrudan bağlantı açık")
+                            .setMessage("Diğer Android cihaz: Hızlı Aktar → ⚡ Doğrudan bağlantı → Bağlantıya katıl.\n\n"
+                                    + "Bilgisayar veya başka cihaz: Wi-Fi listesinden bu ağa bağlanın:\n\n"
+                                    + "Ağ adı:  " + Direct.ssid(this) + "\nŞifre:  " + Direct.pass(this) + "\n\n"
+                                    + "Bağlanınca cihazlar listede kendiliğinden görünür. Görünmezse \"IP ile ekle\": " + Direct.OWNER_IP)
+                            .setPositiveButton("Tamam", null).show();
+                })))
+                .setNeutralButton("Bağlantıya katıl", (d, w) -> Direct.join(this, err -> runOnUiThread(() -> {
+                    if (err != null) { toast(err); return; }
+                    toast("Katılınıyor...");
+                    findOwner();
+                })))
+                .setNegativeButton("Bağlantıyı kapat", (d, w) -> Direct.close(this, err -> runOnUiThread(() -> toast("Doğrudan bağlantı kapatıldı"))))
+                .show();
+    }
+
+    /** Katılan taraf: bağlantıyı açan cihazı (her zaman 192.168.49.1) bulup listeye ekler. */
+    private void findOwner() {
+        bg.execute(() -> {
+            for (int i = 0; i < 30; i++) {
+                String[] info = new String[3];
+                try {
+                    Sender.ping(this, Direct.OWNER_IP, ReceiverService.TCP_PORT, 0, info);
+                    Peers.Peer p = Peers.seen(this, info[0], info[1], info[2], Direct.OWNER_IP, ReceiverService.TCP_PORT, true);
+                    runOnUiThread(() -> { if (p != null) selectedId = p.id; toast("Doğrudan bağlandı: " + info[1]); });
+                    return;
+                } catch (IOException e) {
+                    try { Thread.sleep(1000); } catch (InterruptedException x) { return; }
+                }
+            }
+            runOnUiThread(() -> toast("Bağlantıyı açan cihaz bulunamadı. Eşleşme kodları aynı mı?"));
+        });
     }
 
     private void showGuide() {
